@@ -12,6 +12,7 @@ parseOpcode =
   (Goto <$> (char '1' >> addrP))
     <|> (Call <$> (char '2' >> addrP))
     <|> try (string "00EE" >> pure Return)
+    <|> try (string "00E0" >> pure DispClear)
     <|> (SkipIfEq <$> (char '3' >> regP) <*> b8P)
     <|> (SkipIfNotEq <$> (char '4' >> regP) <*> b8P)
     <|> (SkipIfREq <$> (char '5' >> regP) <*> (regP <* char '0'))
@@ -30,6 +31,9 @@ parseOpcode =
     <|> (SetI <$> (char 'A' >> addrP))
     <|> (JmpV0Plus <$> (char 'B' >> addrP))
     <|> (RandomAnd <$> (char 'C' >> regP) <*> b8P)
+    <|> (Draw <$> (char 'D' >> regP) <*> regP <*> regP)
+    <|> try (RegToDelay <$> do (char 'F' >> regP) <* string "07")
+    <|> try (SetDelay <$> do (char 'F' >> regP) <* string "15")
     <|> pure None
 
 hStr :: Parser String -> Parser String

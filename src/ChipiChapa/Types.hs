@@ -32,18 +32,27 @@ data Opcode
   | SetI Address
   | JmpV0Plus Address
   | RandomAnd Reg Word8
+  | Draw Reg Reg Int
+  | RegToDelay Reg
+  | SetDelay Reg
+  | DispClear
   | None
   deriving (Show)
 
 data Chip8 = Chip8
   { _memory :: Vector Word8
   , _registers :: Vector Word8
+  , _display :: Vector Word32
   , _stack :: [Address]
   , _pointer :: Address
   , _dt :: Int
-  , _i :: Int
+  , _iReg :: Int
+  , _frame :: Int
   }
 
 makeLenses ''Chip8
 
 type ChipIO = StateT Chip8 IO
+
+-- (@) :: (Functor f, Ixed t) => ((t -> f t) -> c) -> Index t -> (IxValue t -> f (IxValue t)) -> c
+x @ y = x . singular (ix y)
