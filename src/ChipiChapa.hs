@@ -1,6 +1,5 @@
 module ChipiChapa where
 
-import Control.Monad.IO.Class
 import Control.Monad.State
 import Data.Binary.Get
 import Data.ByteString.Lazy qualified as BS
@@ -20,13 +19,9 @@ readRom fp = do
 
   pure $ runGet (V.replicateM cnt getWord8) contents
 
-getKey :: IO Char
-getKey = pure ' '
-
 loop :: ChipIO ()
 loop = do
-  e <- liftIO getKey
-  update e
+  update
   drawGUI
 
 drawGUI :: ChipIO ()

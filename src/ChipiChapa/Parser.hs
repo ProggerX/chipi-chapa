@@ -35,6 +35,13 @@ parseOpcode =
     <|> try (RegToDelay <$> do (char 'F' >> regP) <* string "07")
     <|> try (SetDelay <$> do (char 'F' >> regP) <* string "15")
     <|> try (SkipIfNotPressed <$> do (char 'E' >> regP) <* string "A1")
+    <|> try (SkipIfPressed <$> do (char 'E' >> regP) <* string "9E")
+    <|> try (WaitForKey <$> do (char 'F' >> regP) <* string "0A")
+    <|> try (AddI <$> do (char 'F' >> regP) <* string "1E")
+    <|> try (StoreBCD <$> do (char 'F' >> regP) <* string "33")
+    <|> try (DumpRegs <$> do (char 'F' >> regP) <* string "55")
+    <|> try (LoadRegs <$> do (char 'F' >> regP) <* string "65")
+    <|> try (FontSprite <$> do (char 'F' >> regP) <* string "29")
     <|> pure None
 
 hStr :: Parser String -> Parser String

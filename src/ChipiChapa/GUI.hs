@@ -18,7 +18,7 @@ rLoop loop = do
     forM_ [0 .. 31] $ \y -> do
       w <- use $ display @ x
       liftIO . drawRectangle (10 * x) (10 * y) 10 10 $
-        if testBit w (32 - y)
+        if testBit w (32 - y - 1)
           then white
           else black
   liftIO endDrawing
