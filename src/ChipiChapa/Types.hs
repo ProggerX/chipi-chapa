@@ -36,6 +36,7 @@ data Opcode
   | RegToDelay Reg
   | SetDelay Reg
   | DispClear
+  | SkipIfNotPressed Reg
   | None
   deriving (Show)
 

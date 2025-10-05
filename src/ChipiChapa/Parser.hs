@@ -34,6 +34,7 @@ parseOpcode =
     <|> (Draw <$> (char 'D' >> regP) <*> regP <*> regP)
     <|> try (RegToDelay <$> do (char 'F' >> regP) <* string "07")
     <|> try (SetDelay <$> do (char 'F' >> regP) <* string "15")
+    <|> try (SkipIfNotPressed <$> do (char 'E' >> regP) <* string "A1")
     <|> pure None
 
 hStr :: Parser String -> Parser String

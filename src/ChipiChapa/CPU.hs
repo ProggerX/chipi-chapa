@@ -51,9 +51,9 @@ update e = do
 
   -- Execute
   getOpcode
-    -- >>= trace
+    >>= trace
     <&> (fromE . parse parseOpcode "" . showHex')
-    -- >>= trace'
+    >>= trace'
     >>= (\a -> pointer += 2 >> pure a)
     >>= \case
       None -> pure ()
@@ -95,24 +95,24 @@ update e = do
       Add x y -> do
         !vx <- use $ registers @ x
         !vy <- use $ registers @ y
+        registers @ x += vy
         if fromIntegral @_ @Int vx + fromIntegral vy > 255
           then (registers @ 15) .= 1
           else (registers @ 15) .= 0
-        registers @ x += vy
       Sub x y -> do
-        vx <- use $ registers @ x
-        vy <- use $ registers @ y
+        !vx <- use $ registers @ x
+        !vy <- use $ registers @ y
+        registers @ x -= vy
         if vx >= vy
           then registers @ 15 .= 1
           else registers @ 15 .= 0
-        registers @ x -= vy
       SubFrom x y -> do
-        vx <- use $ registers @ x
-        vy <- use $ registers @ y
+        !vx <- use $ registers @ x
+        !vy <- use $ registers @ y
+        registers @ x .= vy - vx
         if vy >= vx
           then registers @ 15 .= 1
           else registers @ 15 .= 0
-        registers @ x .= vy - vx
       RShift x -> do
         registers @ x %= (`shiftR` 1)
         vx <- use (registers @ x)
@@ -130,6 +130,7 @@ update e = do
         registers @ x .= rnd .&. nn
       RegToDelay x -> use dt >>= assign (registers @ x) . fromIntegral
       SetDelay x -> use (registers @ x) >>= assign dt . fromIntegral
+      SkipIfNotPressed _ -> pointer += 2
       Draw rx ry nv ->
         let
           readRow :: (MonadState Chip8 m) => Int -> m Word8
