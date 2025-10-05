@@ -17,6 +17,8 @@ import Text.Printf
 import ChipiChapa.Parser
 import ChipiChapa.Types
 
+import Raylib.Core
+
 showHex' :: Word16 -> String
 showHex' = printf "%04X"
 
@@ -130,7 +132,10 @@ update e = do
         registers @ x .= rnd .&. nn
       RegToDelay x -> use dt >>= assign (registers @ x) . fromIntegral
       SetDelay x -> use (registers @ x) >>= assign dt . fromIntegral
-      SkipIfNotPressed _ -> pointer += 2
+      SkipIfNotPressed x -> do
+        !vx <- use $ registers @ x
+        isUp <- liftIO $ isKeyUp $ key vx
+        when isUp $ pointer += 2
       Draw rx ry nv ->
         let
           readRow :: (MonadState Chip8 m) => Int -> m Word8
@@ -141,12 +146,12 @@ update e = do
           drawSprite :: (MonadState Chip8 m, MonadIO m) => Int -> Int -> Int -> m ()
           drawSprite x y n = do
             registers @ 15 .= 0
-            forM_ [0 .. min (n - 1) (31 - y)] $ \i -> do
+            forM_ [0 .. n - 1] $ \i -> do
               row <- readRow i
-              let cy = i + y
+              let cy = (i + y) `mod` 32
 
-              forM_ [0 .. min 7 (63 - x)] $ \j -> do
-                let cx = j + x
+              forM_ [0 .. 7] $ \j -> do
+                let cx = (j + x) `mod` 64
                 !dx <- use $ display @ cx
 
                 let !px = testBit row (8 - j - 1)

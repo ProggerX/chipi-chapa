@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module ChipiChapa.Types where
@@ -6,6 +7,7 @@ import Control.Lens
 import Control.Monad.State
 import Data.Vector
 import Data.Word
+import Raylib.Types
 
 type Address = Int
 type Reg = Int
@@ -55,5 +57,25 @@ makeLenses ''Chip8
 
 type ChipIO = StateT Chip8 IO
 
--- (@) :: (Functor f, Ixed t) => ((t -> f t) -> c) -> Index t -> (IxValue t -> f (IxValue t)) -> c
+(@) :: (Functor f, Ixed t) => ((t -> f t) -> c) -> Index t -> (IxValue t -> f (IxValue t)) -> c
 x @ y = x . singular (ix y)
+
+key :: Word8 -> KeyboardKey
+key = \case
+  0x1 -> KeyOne
+  0x2 -> KeyTwo
+  0x3 -> KeyThree
+  0xC -> KeyFour
+  0x4 -> KeyQ
+  0x5 -> KeyW
+  0x6 -> KeyE
+  0xD -> KeyR
+  0x7 -> KeyA
+  0x8 -> KeyS
+  0x9 -> KeyD
+  0xE -> KeyF
+  0xA -> KeyZ
+  0x0 -> KeyX
+  0xB -> KeyC
+  0xF -> KeyV
+  _ -> undefined
