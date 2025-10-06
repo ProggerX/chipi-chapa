@@ -13,7 +13,8 @@ import ChipiChapa.Types
 rLoop :: ChipIO () -> ChipIO ()
 rLoop loop = do
   liftIO beginDrawing
-  loop
+  dt -= 1
+  replicateM_ 10 loop
   forM_ [0 .. 63] $ \x -> do
     forM_ [0 .. 31] $ \y -> do
       w <- use $ display @ x
@@ -27,6 +28,6 @@ rLoop loop = do
 window :: IO () -> IO ()
 window f = do
   win <- initWindow 640 320 "Chipi-chapa"
-  setTargetFPS 600
+  setTargetFPS 60
   f
   closeWindow $ Just win

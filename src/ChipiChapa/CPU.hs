@@ -48,12 +48,6 @@ fromE (Right a) = a
 
 update :: (MonadState Chip8 m, MonadIO m) => m ()
 update = do
-  -- Timer
-  frame %= (\x -> if x > 10 then 0 else x + 1)
-  f <- use frame
-  when (f == 0) $ dt %= (\x -> if x > 0 then x - 1 else 0)
-
-  -- Execute
   h <- use halted
 
   if h > -1
