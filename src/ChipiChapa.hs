@@ -10,7 +10,6 @@ import System.Environment
 
 import ChipiChapa.CPU
 import ChipiChapa.GUI
-import ChipiChapa.Types
 
 readRom :: FilePath -> IO (Vector Word8)
 readRom fp = do
@@ -19,16 +18,8 @@ readRom fp = do
 
   pure $ runGet (V.replicateM cnt getWord8) contents
 
-loop :: ChipIO ()
-loop = do
-  update
-  drawGUI
-
-drawGUI :: ChipIO ()
-drawGUI = pure ()
-
 main :: IO ()
 main = window $ do
   arg <- concat <$> getArgs
   rom <- readRom arg
-  evalStateT (rLoop loop) $ initialChip8 rom
+  evalStateT rLoop $ initialChip8 rom

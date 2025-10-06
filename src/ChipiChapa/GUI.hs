@@ -8,11 +8,12 @@ import Raylib.Core
 import Raylib.Core.Shapes
 import Raylib.Util.Colors
 
+import ChipiChapa.CPU
 import ChipiChapa.Types
 
-rLoop :: ChipIO () -> ChipIO ()
-rLoop loop = do
-  replicateM_ 10 loop
+rLoop :: ChipIO ()
+rLoop = do
+  replicateM_ 10 update
   dt %= (\t -> if t > 0 then t - 1 else t)
   liftIO beginDrawing
   forM_ [0 .. 63] $ \x -> do
@@ -23,7 +24,7 @@ rLoop loop = do
           then white
           else black
   liftIO endDrawing
-  liftIO windowShouldClose >>= (`unless` rLoop loop)
+  liftIO windowShouldClose >>= (`unless` rLoop)
 
 window :: IO () -> IO ()
 window f = do
