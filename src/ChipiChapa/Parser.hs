@@ -32,7 +32,7 @@ parseOpcode =
     <|> (JmpV0Plus <$> (char 'B' >> addrP))
     <|> (RandomAnd <$> (char 'C' >> regP) <*> b8P)
     <|> (Draw <$> (char 'D' >> regP) <*> regP <*> regP)
-    <|> try (RegToDelay <$> do (char 'F' >> regP) <* string "07")
+    <|> try (GetDelay <$> do (char 'F' >> regP) <* string "07")
     <|> try (SetDelay <$> do (char 'F' >> regP) <* string "15")
     <|> try (SkipIfNotPressed <$> do (char 'E' >> regP) <* string "A1")
     <|> try (SkipIfPressed <$> do (char 'E' >> regP) <* string "9E")

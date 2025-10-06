@@ -35,7 +35,7 @@ data Opcode
   | JmpV0Plus Address
   | RandomAnd Reg Word8
   | Draw Reg Reg Int
-  | RegToDelay Reg
+  | GetDelay Reg
   | SetDelay Reg
   | DispClear
   | SkipIfNotPressed Reg

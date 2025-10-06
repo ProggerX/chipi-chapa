@@ -136,7 +136,7 @@ update = do
           RandomAnd x nn -> do
             rnd <- liftIO $ randomRIO (0, 255)
             registers @ x .= rnd .&. nn
-          RegToDelay x -> use dt >>= assign (registers @ x) . fromIntegral
+          GetDelay x -> use dt >>= assign (registers @ x) . fromIntegral
           SetDelay x -> use (registers @ x) >>= assign dt . fromIntegral
           SkipIfNotPressed x -> do
             !vx <- use $ registers @ x

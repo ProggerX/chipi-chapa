@@ -12,9 +12,9 @@ import ChipiChapa.Types
 
 rLoop :: ChipIO () -> ChipIO ()
 rLoop loop = do
-  liftIO beginDrawing
-  dt -= 1
   replicateM_ 10 loop
+  dt %= (\t -> if t > 0 then t - 1 else t)
+  liftIO beginDrawing
   forM_ [0 .. 63] $ \x -> do
     forM_ [0 .. 31] $ \y -> do
       w <- use $ display @ x
