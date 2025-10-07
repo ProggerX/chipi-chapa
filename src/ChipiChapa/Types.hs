@@ -57,8 +57,9 @@ data Chip8 = Chip8
   , _pointer :: Address
   , _dt :: Int
   , _iReg :: Int
-  , _frame :: Int
+  , _debug :: Bool
   , _halted :: Reg
+  , _speed :: Int
   }
 
 makeLenses ''Chip8
