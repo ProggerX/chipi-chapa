@@ -21,7 +21,7 @@
       hs-project =
         {
           pkgs,
-		  hp ? pkgs.haskellPackages,
+          hp ? pkgs.haskellPackages,
           isShell ? false,
         }:
         hp.developPackage {
@@ -44,21 +44,27 @@
         { pkgs, ... }:
         {
           packages.default = hs-project { inherit pkgs; };
-          packages.static = pkgs.haskell.lib.overrideCabal (hs-project { inherit pkgs; hp = (pkgs.haskellPackages.override { ghc = fixGHC pkgs.ghc; }); }) (old: {
-            enableSharedExecutables = false;
-            enableSharedLibraries = false;
-            configureFlags = [
-              "--ghc-option=-optl=-static"
-              "--extra-lib-dirs=${pkgs.gmp6.override { withStatic = true; }}/lib"
-              "--extra-lib-dirs=${pkgs.zlib.static}/lib"
-              "--extra-lib-dirs=${
-                pkgs.libffi.overrideAttrs (old: {
-                  dontDisableStatic = true;
-                  doChecks = false;
-                })
-              }/lib"
-            ];
-          });
+          packages.static =
+            pkgs.haskell.lib.overrideCabal
+              (hs-project {
+                inherit pkgs;
+                hp = (pkgs.haskellPackages.override { ghc = fixGHC pkgs.ghc; });
+              })
+              (old: {
+                enableSharedExecutables = false;
+                enableSharedLibraries = false;
+                configureFlags = [
+                  "--ghc-option=-optl=-static"
+                  "--extra-lib-dirs=${pkgs.gmp6.override { withStatic = true; }}/lib"
+                  "--extra-lib-dirs=${pkgs.zlib.static}/lib"
+                  "--extra-lib-dirs=${
+                    pkgs.libffi.overrideAttrs (old: {
+                      dontDisableStatic = true;
+                      doChecks = false;
+                    })
+                  }/lib"
+                ];
+              });
           devShells.default = hs-project {
             inherit pkgs;
             isShell = true;
