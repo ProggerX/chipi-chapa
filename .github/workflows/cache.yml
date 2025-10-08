@@ -18,4 +18,4 @@ jobs:
           name: balds
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - name: Push to Cachix
-        run: nix build --no-link --print-out-paths | cachix push balds
+        run: nix build .#static --no-link --print-out-paths | cachix push balds
