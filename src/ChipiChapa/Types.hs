@@ -5,9 +5,26 @@ module ChipiChapa.Types where
 
 import Control.Lens
 import Control.Monad.State
+import Data.ByteString qualified as BS
+import Data.FileEmbed (embedFileRelative)
 import Data.Vector
 import Data.Word
 import Raylib.Types
+
+data Chip8 = Chip8
+  { _memory :: Vector Word8
+  , _registers :: Vector Word8
+  , _display :: Vector Word32
+  , _breakpoints :: Vector Bool
+  , _stack :: [Address]
+  , _pointer :: Address
+  , _dt :: Int
+  , _st :: Int
+  , _iReg :: Int
+  , _debug :: Bool
+  , _halted :: Halted
+  , _speed :: Int
+  }
 
 type Address = Int
 type Reg = Int
@@ -42,6 +59,7 @@ data Opcode
   | Draw Reg Reg Int
   | GetDelay Reg
   | SetDelay Reg
+  | SetSound Reg
   | DispClear
   | SkipIfNotPressed Reg
   | SkipIfPressed Reg
@@ -54,27 +72,12 @@ data Opcode
   | None
   deriving (Show)
 
-data Chip8 = Chip8
-  { _memory :: Vector Word8
-  , _registers :: Vector Word8
-  , _display :: Vector Word32
-  , _breakpoints :: Vector Bool
-  , _stack :: [Address]
-  , _pointer :: Address
-  , _dt :: Int
-  , _iReg :: Int
-  , _debug :: Bool
-  , _halted :: Halted
-  , _speed :: Int
-  }
-
-makeLenses ''Chip8
-
 data GUI = GUI
   { _memVAddr :: Address
   , _memVCursor :: Address
   }
 
+makeLenses ''Chip8
 makeLenses ''GUI
 
 type ChipIO = StateT Chip8 IO
@@ -227,3 +230,6 @@ fontData =
     , 0x80
     , 0x80
     ]
+
+beep :: BS.ByteString
+beep = $(embedFileRelative "beep.wav")

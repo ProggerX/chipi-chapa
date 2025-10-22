@@ -34,7 +34,8 @@ library
         lens,
         h-raylib,
         parsec,
-        random
+        random,
+        file-embed
     hs-source-dirs:   src
     default-language: GHC2021
 

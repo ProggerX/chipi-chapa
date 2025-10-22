@@ -37,6 +37,7 @@ initialChip8 rom =
     , _registers = V.replicate 16 0
     , _stack = []
     , _dt = 0
+    , _st = 0
     , _iReg = 0
     , _display = V.replicate 64 0
     , _halted = Working
@@ -145,6 +146,7 @@ update = do
             registers @ x .= rnd .&. nn
           GetDelay x -> use dt >>= assign (registers @ x) . fromIntegral
           SetDelay x -> use (registers @ x) >>= assign dt . fromIntegral
+          SetSound x -> use (registers @ x) >>= assign st . fromIntegral
           SkipIfNotPressed x -> do
             !vx <- use $ registers @ x
             isUp <- liftIO $ isKeyUp $ key vx

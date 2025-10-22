@@ -6,10 +6,11 @@ import Control.Lens
 import Control.Monad
 import Control.Monad.State
 import Data.Bits
-import Data.Either
+import Data.ByteString qualified as BS
 import Data.Vector qualified as V
 import Data.Word
 import Raylib.Core
+import Raylib.Core.Audio
 import Raylib.Core.Shapes
 import Raylib.Core.Text
 import Raylib.Types
@@ -57,6 +58,13 @@ rLoop = do
     sp <- use speed
     replicateM_ sp update
     dt %= (\t -> if t > 0 then t - 1 else t)
+
+    s <- use st
+    liftIO $ do
+      sn <- loadSound "beep.wav"
+      when (s > 0) $ playSound sn
+
+    st %= (\t -> if t > 0 then t + 1 else t)
 
     liftIO beginDrawing
 
@@ -128,7 +136,7 @@ rLoop = do
         drawText "I addr: " 650 250 20 white
         drawText ("0x" ++ showHex' (fromIntegral i)) 725 250 20 purple
 
-      use stack >>= \st -> liftIO (drawText ("Stack: " ++ show st) 650 280 20 white)
+      use stack >>= \t -> liftIO (drawText ("Stack: " ++ show t) 650 280 20 white)
 
     liftIO (isKeyPressed KeyEqual) >>= (`when` (speed += 1))
     liftIO (isKeyPressed KeyMinus) >>= (`when` (speed -= 1))
@@ -159,7 +167,9 @@ rLoop = do
 
 window :: IO () -> IO ()
 window f = do
+  BS.writeFile "beep.wav" beep
   win <- initWindow 640 320 "Chipi-chapa"
+  initAudioDevice
   setTargetFPS 60
   f
   closeWindow $ Just win

@@ -34,6 +34,7 @@ parseOpcode =
     <|> try (Draw <$> (char 'D' >> regP) <*> regP <*> regP)
     <|> try (GetDelay <$> do (char 'F' >> regP) <* string "07")
     <|> try (SetDelay <$> do (char 'F' >> regP) <* string "15")
+    <|> try (SetSound <$> do (char 'F' >> regP) <* string "18")
     <|> try (SkipIfNotPressed <$> do (char 'E' >> regP) <* string "A1")
     <|> try (SkipIfPressed <$> do (char 'E' >> regP) <* string "9E")
     <|> try (WaitForKey <$> do (char 'F' >> regP) <* string "0A")
