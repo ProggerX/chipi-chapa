@@ -64,7 +64,15 @@ data Chip8 = Chip8
 
 makeLenses ''Chip8
 
+data GUI = GUI
+  { _memVAddr :: Address
+  , _memVCursor :: Address
+  }
+
+makeLenses ''GUI
+
 type ChipIO = StateT Chip8 IO
+type AppM = StateT GUI ChipIO
 
 (@) :: (Functor f, Ixed t) => ((t -> f t) -> c) -> Index t -> (IxValue t -> f (IxValue t)) -> c
 x @ y = x . singular (ix y)
