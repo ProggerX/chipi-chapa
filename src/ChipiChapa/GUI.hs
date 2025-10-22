@@ -81,20 +81,28 @@ rLoop = do
         let
           b = combine v1 v2
           hx = showHex' $ fromIntegral b
-          opc = case fromRight undefined $ parse parseOpcode "" hx of
-            None -> ""
-            x -> show x
+          opc = case parse parseOpcode "" hx of
+            Left e -> error (show e)
+            Right y -> case y of
+              None -> ""
+              x -> show x
         liftIO $ drawText "Memory:" 20 330 20 white
         liftIO $ do
           drawText
-            hx
+            (show $ i + sa)
             20
+            (360 + i * 30)
+            20
+            gray
+          drawText
+            hx
+            120
             (360 + i * 30)
             20
             (if vc == i then blue else white)
           drawText
             opc
-            120
+            220
             (360 + i * 30)
             20
             (if vc == i then blue else white)
