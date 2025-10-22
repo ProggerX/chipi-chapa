@@ -6,23 +6,53 @@ import Control.Lens
 import Control.Monad
 import Control.Monad.State
 import Data.Bits
+import Data.Either
 import Data.Vector qualified as V
+import Data.Word
 import Raylib.Core
 import Raylib.Core.Shapes
 import Raylib.Core.Text
 import Raylib.Types
 import Raylib.Util.Colors
+import Text.Parsec
 
 import ChipiChapa.CPU
+import ChipiChapa.Parser
 import ChipiChapa.Types
 
+padRight :: Int -> Char -> String -> String
+padRight targetLength paddingChar str =
+  let currentLength = length str
+      diff = targetLength - currentLength
+   in if diff <= 0
+        then str
+        else str ++ replicate diff paddingChar
+
+groupPairs :: [a] -> [(a, a)]
+groupPairs [] = []
+groupPairs [_] = []
+groupPairs (x : y : rest) = (x, y) : groupPairs rest
+
+combine :: Word8 -> Word8 -> Word16
+combine w1 w2 = (fromIntegral w1 `shiftL` 8) .|. fromIntegral w2
+
 initialGUI :: GUI
-initialGUI = GUI{_memVAddr = 0, _memVCursor = 0}
+initialGUI = GUI{_memVAddr = 512, _memVCursor = 0}
 
 rLoop :: AppM ()
 rLoop = do
   sa <- use memVAddr
   vc <- use memVCursor
+  liftIO (isKeyPressed KeyPageDown) >>= (`when` (memVAddr += 6))
+  liftIO (isKeyPressed KeyPageUp) >>= (`when` (memVAddr -= 6))
+  liftIO (isKeyPressed KeyRight) >>= (`when` (memVAddr += 1))
+  liftIO (isKeyPressed KeyLeft) >>= (`when` (memVAddr -= 1))
+  liftIO (isKeyPressed KeyDown) >>= (`when` (if vc >= 8 then memVAddr += 2 else memVCursor += 1))
+  liftIO (isKeyPressed KeyUp) >>= (`when` (if vc <= 0 then memVAddr -= 2 else memVCursor -= 1))
+
+  ca <- lift $ use pointer
+  liftIO (isKeyPressed KeyN) >>= (`when` (memVAddr .= ca >> memVCursor .= 0))
+
   lift $ do
     sp <- use speed
     replicateM_ sp update
@@ -44,6 +74,32 @@ rLoop = do
             20
             white
 
+      mem <- V.toList <$> use memory
+      bs <- use breakpoints
+      let l = take 9 $ groupPairs (drop sa mem)
+      forM_ (zip l [0 ..]) $ \((v1, v2), i) -> do
+        let
+          b = combine v1 v2
+          hx = showHex' $ fromIntegral b
+          opc = case fromRight undefined $ parse parseOpcode "" hx of
+            None -> ""
+            x -> show x
+        liftIO $ drawText "Memory:" 20 330 20 white
+        liftIO $ do
+          drawText
+            hx
+            20
+            (360 + i * 30)
+            20
+            (if vc == i then blue else white)
+          drawText
+            opc
+            120
+            (360 + i * 30)
+            20
+            (if vc == i then blue else white)
+          when (bs V.! (i + sa)) $ drawRectangle 10 (360 + i * 30) 5 5 red
+
     forM_ [0 .. 63] $ \x -> do
       forM_ [0 .. 31] $ \y -> do
         w <- use $ display @ x
@@ -53,9 +109,10 @@ rLoop = do
             else black
 
       use halted >>= \case
-        -1 -> pure ()
-        17 -> liftIO $ drawText "Paused (p to resume)" 650 150 20 blue
-        _ -> liftIO $ drawText "Waiting for key press" 650 150 20 yellow
+        Working -> pure ()
+        Paused -> liftIO $ drawText "Paused (p to resume)" 650 150 20 blue
+        AtBreakpoint -> liftIO $ drawText "Stopped at breakpoint" 650 150 20 red
+        Waiting _ -> liftIO $ drawText "Waiting for key press" 650 150 20 yellow
       liftIO (drawText ("Speed: " ++ show sp) 650 180 20 white)
       use dt >>= \t -> liftIO (drawText ("DT: " ++ show t) 650 210 20 white)
 
@@ -68,9 +125,16 @@ rLoop = do
     liftIO (isKeyPressed KeyEqual) >>= (`when` (speed += 1))
     liftIO (isKeyPressed KeyMinus) >>= (`when` (speed -= 1))
 
+    liftIO (isKeyPressed KeyB) >>= (`when` (breakpoints @ (sa + vc) %= not))
     liftIO (isKeyPressed KeyP)
       >>= ( `when`
-              (halted %= (\x -> if x == -1 then 17 else -1))
+              ( halted
+                  %= ( \case
+                        Paused -> Working
+                        AtBreakpoint -> Working
+                        _ -> Paused
+                     )
+              )
           )
 
     dk <- liftIO $ isKeyPressed KeyF1

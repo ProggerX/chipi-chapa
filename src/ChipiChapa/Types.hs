@@ -11,6 +11,11 @@ import Raylib.Types
 
 type Address = Int
 type Reg = Int
+data Halted
+  = AtBreakpoint
+  | Waiting Reg
+  | Paused
+  | Working
 
 data Opcode
   = Return
@@ -53,12 +58,13 @@ data Chip8 = Chip8
   { _memory :: Vector Word8
   , _registers :: Vector Word8
   , _display :: Vector Word32
+  , _breakpoints :: Vector Bool
   , _stack :: [Address]
   , _pointer :: Address
   , _dt :: Int
   , _iReg :: Int
   , _debug :: Bool
-  , _halted :: Reg
+  , _halted :: Halted
   , _speed :: Int
   }
 
