@@ -11,20 +11,13 @@
       ...
     }@inputs:
     let
-      fixGHC =
-        pkg:
-        pkg.override {
-          enableRelocatedStaticLibs = true;
-          enableShared = false;
-          enableDwarf = false;
-        };
       hs-project =
         {
           pkgs,
           hp ? pkgs.haskellPackages,
           isShell ? false,
         }:
-        hp.developPackage {
+        (hp.developPackage {
           root = ./.;
           returnShellEnv = isShell;
           modifier =
@@ -36,7 +29,10 @@
                 haskell-language-server
               ]
             );
-        };
+        }).overrideAttrs {
+			nativeBuildInputs = [ pkgs.makeWrapper pkgs.removeReferencesTo ];
+			postInstall = ''wrapProgram $out/bin/chipi-chapa --set LD_LIBRARY_PATH ${pkgs.lib.makeLibraryPath [ pkgs.alsa-lib ]}'';
+		};
     in
     flake-parts.lib.mkFlake { inherit inputs; } {
       systems = nixpkgs.lib.platforms.unix;
@@ -44,27 +40,6 @@
         { pkgs, ... }:
         {
           packages.default = hs-project { inherit pkgs; };
-          packages.static =
-            pkgs.haskell.lib.overrideCabal
-              (hs-project {
-                inherit pkgs;
-                hp = (pkgs.haskellPackages.override { ghc = fixGHC pkgs.ghc; });
-              })
-              (old: {
-                enableSharedExecutables = false;
-                enableSharedLibraries = false;
-                configureFlags = [
-                  "--ghc-option=-optl=-static"
-                  "--extra-lib-dirs=${pkgs.gmp6.override { withStatic = true; }}/lib"
-                  "--extra-lib-dirs=${pkgs.zlib.static}/lib"
-                  "--extra-lib-dirs=${
-                    pkgs.libffi.overrideAttrs (old: {
-                      dontDisableStatic = true;
-                      doChecks = false;
-                    })
-                  }/lib"
-                ];
-              });
           devShells.default = hs-project {
             inherit pkgs;
             isShell = true;

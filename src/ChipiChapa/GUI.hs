@@ -64,7 +64,7 @@ rLoop = do
       sn <- loadSound "beep.wav"
       when (s > 0) $ playSound sn
 
-    st %= (\t -> if t > 0 then t + 1 else t)
+    st %= (\t -> if t > 0 then t - 1 else t)
 
     liftIO beginDrawing
 
