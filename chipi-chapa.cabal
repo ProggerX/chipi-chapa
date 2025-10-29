@@ -11,6 +11,7 @@ maintainer:         x@proggers.ru
 -- copyright:
 build-type:         Simple
 -- extra-source-files:
+data-files:         beep.wav
 
 common warnings
     ghc-options: -Wall

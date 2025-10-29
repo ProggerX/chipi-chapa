@@ -39,7 +39,8 @@ combine w1 w2 = (fromIntegral w1 `shiftL` 8) .|. fromIntegral w2
 
 initialGUI :: IO GUI
 initialGUI = do
-  sn <- loadSound "beep.wav"
+  wv <- loadWaveFromMemory ".wav" $ map fromIntegral $ BS.unpack beepF
+  sn <- loadSoundFromWave wv
   pure (GUI 512 0 sn)
 
 rLoop :: AppM ()
@@ -169,7 +170,6 @@ rLoop = do
 
 window :: IO () -> IO ()
 window f = do
-  BS.writeFile "beep.wav" beepF
   win <- initWindow 640 320 "Chipi-chapa"
   initAudioDevice
   setTargetFPS 60
