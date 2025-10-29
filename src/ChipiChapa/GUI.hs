@@ -37,12 +37,15 @@ groupPairs (x : y : rest) = (x, y) : groupPairs rest
 combine :: Word8 -> Word8 -> Word16
 combine w1 w2 = (fromIntegral w1 `shiftL` 8) .|. fromIntegral w2
 
-initialGUI :: GUI
-initialGUI = GUI{_memVAddr = 512, _memVCursor = 0}
+initialGUI :: IO GUI
+initialGUI = do
+  sn <- loadSound "beep.wav"
+  pure (GUI 512 0 sn)
 
 rLoop :: AppM ()
 rLoop = do
   sa <- use memVAddr
+  sn <- use beep
   vc <- use memVCursor
   liftIO (isKeyPressed KeyPageDown) >>= (`when` (memVAddr += 6))
   liftIO (isKeyPressed KeyPageUp) >>= (`when` (memVAddr -= 6))
@@ -61,7 +64,6 @@ rLoop = do
 
     s <- use st
     liftIO $ do
-      sn <- loadSound "beep.wav"
       when (s > 0) $ playSound sn
 
     st %= (\t -> if t > 0 then t - 1 else t)
@@ -146,9 +148,9 @@ rLoop = do
       >>= ( `when`
               ( halted
                   %= ( \case
-                        Paused -> Working
-                        AtBreakpoint -> Working
-                        _ -> Paused
+                         Paused -> Working
+                         AtBreakpoint -> Working
+                         _ -> Paused
                      )
               )
           )
@@ -167,7 +169,7 @@ rLoop = do
 
 window :: IO () -> IO ()
 window f = do
-  BS.writeFile "beep.wav" beep
+  BS.writeFile "beep.wav" beepF
   win <- initWindow 640 320 "Chipi-chapa"
   initAudioDevice
   setTargetFPS 60

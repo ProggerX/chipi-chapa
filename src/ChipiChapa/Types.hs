@@ -75,6 +75,7 @@ data Opcode
 data GUI = GUI
   { _memVAddr :: Address
   , _memVCursor :: Address
+  , _beep :: Sound
   }
 
 makeLenses ''Chip8
@@ -231,5 +232,5 @@ fontData =
     , 0x80
     ]
 
-beep :: BS.ByteString
-beep = $(embedFileRelative "beep.wav")
+beepF :: BS.ByteString
+beepF = $(embedFileRelative "beep.wav")
