@@ -22,6 +22,7 @@ library
     other-modules:
         ChipiChapa.Types,
         ChipiChapa.Types.Opcodes,
+        ChipiChapa.Types.Keyboard,
         ChipiChapa.Types.Font,
         ChipiChapa.GUI,
         ChipiChapa.CPU,
@@ -42,7 +43,7 @@ library
         h-raylib,
         parsec,
         random,
-        file-embed
+        file-embed,
     hs-source-dirs:   src
     default-language: GHC2021
 

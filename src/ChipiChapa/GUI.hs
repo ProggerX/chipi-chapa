@@ -72,7 +72,7 @@ rLoop = do
         liftIO $ drawText "Registers:" 650 20 20 white
         liftIO $
           drawText
-            (showHex' $ fromIntegral b)
+            (showHex $ fromIntegral b)
             (650 + (i * 60) `mod` 240)
             (50 + (i `div` 4) * 30)
             20
@@ -97,7 +97,7 @@ rLoop = do
 
       use iReg >>= \i -> liftIO $ do
         drawText "I addr: " 650 250 20 white
-        drawText ("0x" ++ showHex' (fromIntegral i)) 725 250 20 purple
+        drawText ("0x" ++ showHex (fromIntegral i)) 725 250 20 purple
 
       use stack >>= \t -> liftIO (drawText ("Stack: " ++ show t) 650 280 20 white)
 
@@ -131,7 +131,7 @@ rLoop = do
   forM_ (zip l [0 ..]) $ \((v1, v2), i) -> do
     let
       b = combine v1 v2
-      hx = showHex' $ fromIntegral b
+      hx = showHex $ fromIntegral b
       opc = case parse opcode "" hx of
         Left e -> error (show e)
         Right y -> y
@@ -174,7 +174,7 @@ rLoop = do
 
 window :: IO () -> IO ()
 window f = do
-  win <- initWindow 640 320 "Chipi-chapa"
+  win <- initWindow 640 320 "Chipi chipi chapa chapa dubi dubi daba daba"
   initAudioDevice
   setTargetFPS 60
   f

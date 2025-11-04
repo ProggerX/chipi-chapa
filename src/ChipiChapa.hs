@@ -22,7 +22,9 @@ main :: IO ()
 main = window $ do
   arg <- concat <$> getArgs
   rom <- readRom arg
+
   gui <- initialGUI
+  chp <- initialChip8 rom
   evalStateT
     (evalStateT rLoop gui)
-    $ initialChip8 rom
+    chp

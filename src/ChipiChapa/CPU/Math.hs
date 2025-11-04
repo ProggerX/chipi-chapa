@@ -3,7 +3,6 @@ module ChipiChapa.CPU.Math where
 
 import ChipiChapa.Types
 import Control.Lens
-import Control.Monad
 import Control.Monad.State
 import Data.Bits
 
