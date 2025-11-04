@@ -37,15 +37,16 @@ initialGUI = do
 
 rLoop :: AppM ()
 rLoop = do
-  sa <- use memVAddr
-  sn <- use beep
-  vc <- use memVCursor
+  vc' <- use memVCursor
   liftIO (isKeyPressed KeyPageDown) >>= (`when` (memVAddr += 6))
   liftIO (isKeyPressed KeyPageUp) >>= (`when` (memVAddr -= 6))
   liftIO (isKeyPressed KeyRight) >>= (`when` (memVAddr += 1))
   liftIO (isKeyPressed KeyLeft) >>= (`when` (memVAddr -= 1))
-  liftIO (isKeyPressed KeyDown) >>= (`when` (if vc >= 8 then memVAddr += 2 else memVCursor += 1))
-  liftIO (isKeyPressed KeyUp) >>= (`when` (if vc <= 0 then memVAddr -= 2 else memVCursor -= 1))
+  liftIO (isKeyPressed KeyDown) >>= (`when` (if vc' >= 8 then memVAddr += 2 else memVCursor += 1))
+  liftIO (isKeyPressed KeyUp) >>= (`when` (if vc' <= 0 then memVAddr -= 2 else memVCursor -= 1))
+  sa <- use memVAddr
+  sn <- use beep
+  vc <- use memVCursor
 
   ca <- lift $ use pointer
   liftIO (isKeyPressed KeyN) >>= (`when` (memVAddr .= ca >> memVCursor .= 0))
@@ -104,7 +105,7 @@ rLoop = do
     liftIO (isKeyPressed KeyEqual) >>= (`when` (speed += 1))
     liftIO (isKeyPressed KeyMinus) >>= (`when` (speed -= 1))
 
-    liftIO (isKeyPressed KeyB) >>= (`when` (breakpoints @ (sa + vc) %= not))
+    liftIO (isKeyPressed KeyB) >>= (`when` (breakpoints @ (sa + vc * 2) %= not))
     liftIO (isKeyPressed KeyP)
       >>= ( `when`
               ( halted
@@ -150,7 +151,7 @@ rLoop = do
     liftIO $ drawText "Memory:" 20 330 20 white
     liftIO $ do
       drawText
-        (show $ i + sa)
+        (show $ i * 2 + sa)
         20
         (360 + i * 30)
         20
@@ -167,7 +168,7 @@ rLoop = do
         (360 + i * 30)
         20
         (if vc == i then blue else white)
-      when (bs V.! (i + sa)) $ drawRectangle 10 (360 + i * 30) 5 5 red
+      when (bs V.! (i * 2 + sa)) $ drawRectangle 10 (360 + i * 30) 5 5 red
 
   liftIO endDrawing
   liftIO windowShouldClose >>= (`unless` rLoop)

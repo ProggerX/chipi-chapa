@@ -62,7 +62,6 @@ update :: (MonadState Chip8 m, MonadIO m) => m ()
 update = do
   h <- use halted
   bs <- use breakpoints
-  pc <- use pointer
 
   case h of
     Waiting r -> do
@@ -74,7 +73,6 @@ update = do
     Paused -> pure ()
     AtBreakpoint -> pure ()
     Working -> do
-      when (bs V.! pc) $ halted .= AtBreakpoint
       opc <- getOpcode <&> fromE . parse opcode "" . showHex
       maybeTrace opc
       pointer += 2
@@ -121,6 +119,8 @@ update = do
               vx <- fromIntegral <$> use (registers @ rx)
               vy <- fromIntegral <$> use (registers @ ry)
               drawSprite vx vy nv
+      pc <- use pointer
+      when (bs V.! pc) $ halted .= AtBreakpoint
  where
   combine :: Word8 -> Word8 -> Word16
   combine w1 w2 = (fromIntegral w1 `shiftL` 8) .|. fromIntegral w2
@@ -132,7 +132,8 @@ update = do
   maybeTrace :: (MonadState Chip8 m, MonadIO m) => Opcode -> m ()
   maybeTrace opc = do
     d <- use trace
-    when d (liftIO $ putStrLn $ "DEBUG: Opcode \"" ++ show opc ++ "\"")
+    pc <- use pointer
+    when d (liftIO $ putStrLn $ "DEBUG: Address \"" ++ show pc ++ "; Opcode \"" ++ show opc ++ "\"")
 
   getOpcode :: (MonadState Chip8 m) => m Word16
   getOpcode = do
