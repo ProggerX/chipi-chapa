@@ -21,14 +21,6 @@ import ChipiChapa.CPU
 import ChipiChapa.Parser
 import ChipiChapa.Types
 
-padRight :: Int -> Char -> String -> String
-padRight targetLength paddingChar str =
-  let currentLength = length str
-      diff = targetLength - currentLength
-   in if diff <= 0
-        then str
-        else str ++ replicate diff paddingChar
-
 groupPairs :: [a] -> [(a, a)]
 groupPairs [] = []
 groupPairs [_] = []
@@ -57,6 +49,7 @@ rLoop = do
 
   ca <- lift $ use pointer
   liftIO (isKeyPressed KeyN) >>= (`when` (memVAddr .= ca >> memVCursor .= 0))
+  spc <- liftIO (isKeyPressed KeySpace)
 
   lift $ do
     sp <- use speed
@@ -76,48 +69,14 @@ rLoop = do
       liftIO $ clearBackground black
       rs <- use registers
       forM_ (zip (V.toList rs) [0 ..]) $ \(b, i) -> do
-        liftIO $ drawText "Registers:" 650 0 20 white
+        liftIO $ drawText "Registers:" 650 20 20 white
         liftIO $
           drawText
             (showHex' $ fromIntegral b)
             (650 + (i * 60) `mod` 240)
-            (30 + (i `div` 4) * 30)
+            (50 + (i `div` 4) * 30)
             20
             white
-
-      mem <- V.toList <$> use memory
-      bs <- use breakpoints
-      let l = take 9 $ groupPairs (drop sa mem)
-      forM_ (zip l [0 ..]) $ \((v1, v2), i) -> do
-        let
-          b = combine v1 v2
-          hx = showHex' $ fromIntegral b
-          opc = case parse parseOpcode "" hx of
-            Left e -> error (show e)
-            Right y -> case y of
-              None -> ""
-              x -> show x
-        liftIO $ drawText "Memory:" 20 330 20 white
-        liftIO $ do
-          drawText
-            (show $ i + sa)
-            20
-            (360 + i * 30)
-            20
-            gray
-          drawText
-            hx
-            120
-            (360 + i * 30)
-            20
-            (if vc == i then blue else white)
-          drawText
-            opc
-            220
-            (360 + i * 30)
-            20
-            (if vc == i then blue else white)
-          when (bs V.! (i + sa)) $ drawRectangle 10 (360 + i * 30) 5 5 red
 
     forM_ [0 .. 63] $ \x -> do
       forM_ [0 .. 31] $ \y -> do
@@ -129,11 +88,12 @@ rLoop = do
 
       use halted >>= \case
         Working -> pure ()
-        Paused -> liftIO $ drawText "Paused (p to resume)" 650 150 20 blue
-        AtBreakpoint -> liftIO $ drawText "Stopped at breakpoint" 650 150 20 red
-        Waiting _ -> liftIO $ drawText "Waiting for key press" 650 150 20 yellow
+        Paused -> liftIO $ drawText "Paused (p to resume)" 650 310 20 blue
+        AtBreakpoint -> liftIO $ drawText "Stopped at breakpoint" 650 310 20 red
+        Waiting _ -> liftIO $ drawText "Waiting for key press" 650 310 20 yellow
       liftIO (drawText ("Speed: " ++ show sp) 650 180 20 white)
       use dt >>= \t -> liftIO (drawText ("DT: " ++ show t) 650 210 20 white)
+      use st >>= \t -> liftIO (drawText ("ST: " ++ show t) 730 210 20 white)
 
       use iReg >>= \i -> liftIO $ do
         drawText "I addr: " 650 250 20 white
@@ -164,6 +124,50 @@ rLoop = do
         if d'
           then setWindowSize 900 640
           else setWindowSize 640 320
+
+  mem <- lift $ V.toList <$> use memory
+  bs <- lift $ use breakpoints
+  let l = take 9 $ groupPairs (drop sa mem)
+  forM_ (zip l [0 ..]) $ \((v1, v2), i) -> do
+    let
+      b = combine v1 v2
+      hx = showHex' $ fromIntegral b
+      opc = case parse opcode "" hx of
+        Left e -> error (show e)
+        Right y -> y
+      sh = case opc of
+        None -> ""
+        x -> show x
+    when (spc && vc == i) $ do
+      case opc of
+        Flow (Goto a) -> do
+          memVAddr .= a
+          memVCursor .= 0
+        Flow (Call a) -> do
+          memVAddr .= a
+          memVCursor .= 0
+        _ -> pure ()
+    liftIO $ drawText "Memory:" 20 330 20 white
+    liftIO $ do
+      drawText
+        (show $ i + sa)
+        20
+        (360 + i * 30)
+        20
+        gray
+      drawText
+        hx
+        120
+        (360 + i * 30)
+        20
+        (if vc == i then blue else white)
+      drawText
+        sh
+        220
+        (360 + i * 30)
+        20
+        (if vc == i then blue else white)
+      when (bs V.! (i + sa)) $ drawRectangle 10 (360 + i * 30) 5 5 red
 
   liftIO endDrawing
   liftIO windowShouldClose >>= (`unless` rLoop)

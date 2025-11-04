@@ -21,8 +21,14 @@ library
     exposed-modules:  ChipiChapa
     other-modules:
         ChipiChapa.Types,
+        ChipiChapa.Types.Opcodes,
+        ChipiChapa.Types.Font,
         ChipiChapa.GUI,
         ChipiChapa.CPU,
+        ChipiChapa.CPU.Math,
+        ChipiChapa.CPU.Flow,
+        ChipiChapa.CPU.Input,
+        ChipiChapa.CPU.Regs,
         ChipiChapa.Parser
     -- other-extensions:
     build-depends:

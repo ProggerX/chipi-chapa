@@ -7,43 +7,66 @@ import Text.Parsec.String
 
 import ChipiChapa.Types
 
-parseOpcode :: Parser Opcode
-parseOpcode =
-  (Goto <$> (char '1' >> addrP))
-    <|> try (Call <$> (char '2' >> addrP))
-    <|> try (string "00EE" >> pure Return)
-    <|> try (string "00E0" >> pure DispClear)
-    <|> try (SkipIfEq <$> (char '3' >> regP) <*> b8P)
-    <|> try (SkipIfNotEq <$> (char '4' >> regP) <*> b8P)
-    <|> try (SkipIfREq <$> (char '5' >> regP) <*> (regP <* char '0'))
-    <|> try (SkipIfRNotEq <$> (char '9' >> regP) <*> (regP <* char '0'))
-    <|> try (RegSet <$> (char '6' >> regP) <*> b8P)
-    <|> try (CAdd <$> (char '7' >> regP) <*> b8P)
-    <|> try (Move <$> (char '8' >> regP) <*> (regP <* char '0'))
-    <|> try (BOr <$> (char '8' >> regP) <*> (regP <* char '1'))
-    <|> try (BAnd <$> (char '8' >> regP) <*> (regP <* char '2'))
-    <|> try (BXor <$> (char '8' >> regP) <*> (regP <* char '3'))
-    <|> try (Add <$> (char '8' >> regP) <*> (regP <* char '4'))
-    <|> try (Sub <$> (char '8' >> regP) <*> (regP <* char '5'))
-    <|> try (RShift <$> do (char '8' >> regP) >> (regP <* char '6'))
-    <|> try (SubFrom <$> (char '8' >> regP) <*> (regP <* char '7'))
-    <|> try (LShift <$> do (char '8' >> regP) >> (regP <* char 'E'))
-    <|> try (SetI <$> (char 'A' >> addrP))
-    <|> try (JmpV0Plus <$> (char 'B' >> addrP))
-    <|> try (RandomAnd <$> (char 'C' >> regP) <*> b8P)
-    <|> try (Draw <$> (char 'D' >> regP) <*> regP <*> regP)
-    <|> try (GetDelay <$> do (char 'F' >> regP) <* string "07")
-    <|> try (SetDelay <$> do (char 'F' >> regP) <* string "15")
-    <|> try (SetSound <$> do (char 'F' >> regP) <* string "18")
-    <|> try (SkipIfNotPressed <$> do (char 'E' >> regP) <* string "A1")
-    <|> try (SkipIfPressed <$> do (char 'E' >> regP) <* string "9E")
-    <|> try (WaitForKey <$> do (char 'F' >> regP) <* string "0A")
-    <|> try (AddI <$> do (char 'F' >> regP) <* string "1E")
-    <|> try (StoreBCD <$> do (char 'F' >> regP) <* string "33")
-    <|> try (DumpRegs <$> do (char 'F' >> regP) <* string "55")
-    <|> try (LoadRegs <$> do (char 'F' >> regP) <* string "65")
-    <|> try (FontSprite <$> do (char 'F' >> regP) <* string "29")
-    <|> pure None
+flow, math, regs, input :: [Parser Opcode]
+flow =
+  map ((Flow <$>) . try) $
+    [ (Goto <$> (char '1' >> addrP))
+    , (Call <$> (char '2' >> addrP))
+    , (string "00EE" >> pure Return)
+    , (SkipIfEq <$> (char '3' >> regP) <*> b8P)
+    , (SkipIfNotEq <$> (char '4' >> regP) <*> b8P)
+    , (SkipIfREq <$> (char '5' >> regP) <*> (regP <* char '0'))
+    , (SkipIfRNotEq <$> (char '9' >> regP) <*> (regP <* char '0'))
+    , (JmpV0Plus <$> (char 'B' >> addrP))
+    ]
+math =
+  map ((Math <$>) . try) $
+    [ (CAdd <$> (char '7' >> regP) <*> b8P)
+    , (BOr <$> (char '8' >> regP) <*> (regP <* char '1'))
+    , (BAnd <$> (char '8' >> regP) <*> (regP <* char '2'))
+    , (BXor <$> (char '8' >> regP) <*> (regP <* char '3'))
+    , (Add <$> (char '8' >> regP) <*> (regP <* char '4'))
+    , (Sub <$> (char '8' >> regP) <*> (regP <* char '5'))
+    , (RShift <$> do (char '8' >> regP) >> (regP <* char '6'))
+    , (SubFrom <$> (char '8' >> regP) <*> (regP <* char '7'))
+    , (LShift <$> do (char '8' >> regP) >> (regP <* char 'E'))
+    ]
+regs =
+  map ((Regs <$>) . try) $
+    [ (RegSet <$> (char '6' >> regP) <*> b8P)
+    , (Move <$> (char '8' >> regP) <*> (regP <* char '0'))
+    , (SetI <$> (char 'A' >> addrP))
+    , (AddI <$> do (char 'F' >> regP) <* string "1E")
+    , (StoreBCD <$> do (char 'F' >> regP) <* string "33")
+    , (DumpRegs <$> do (char 'F' >> regP) <* string "55")
+    , (LoadRegs <$> do (char 'F' >> regP) <* string "65")
+    ]
+input =
+  map ((Input <$>) . try) $
+    [ (SkipIfNotPressed <$> do (char 'E' >> regP) <* string "A1")
+    , (SkipIfPressed <$> do (char 'E' >> regP) <* string "9E")
+    , (WaitForKey <$> do (char 'F' >> regP) <* string "0A")
+    ]
+
+opcode :: Parser Opcode
+opcode =
+  foldr (<|>) (pure None) $
+    concat
+      [ flow
+      , input
+      , math
+      , regs
+      , map
+          try
+          [ (string "00E0" >> pure DispClear)
+          , (RandomAnd <$> (char 'C' >> regP) <*> b8P)
+          , (Draw <$> (char 'D' >> regP) <*> regP <*> regP)
+          , (GetDelay <$> do (char 'F' >> regP) <* string "07")
+          , (SetDelay <$> do (char 'F' >> regP) <* string "15")
+          , (SetSound <$> do (char 'F' >> regP) <* string "18")
+          , (FontSprite <$> do (char 'F' >> regP) <* string "29")
+          ]
+      ]
 
 hStr :: Parser String -> Parser String
 hStr p = ("0x" ++) <$> p

@@ -14,6 +14,10 @@ import System.Random
 import Text.Parsec
 import Text.Printf
 
+import ChipiChapa.CPU.Flow
+import ChipiChapa.CPU.Input
+import ChipiChapa.CPU.Math
+import ChipiChapa.CPU.Regs
 import ChipiChapa.Parser
 import ChipiChapa.Types
 
@@ -68,112 +72,22 @@ update = do
       when (bs V.! pc) $ halted .= AtBreakpoint
       getOpcode
         >>= trace
-        <&> (fromE . parse parseOpcode "" . showHex')
+        <&> (fromE . parse opcode "" . showHex')
         >>= trace'
         >>= (\a -> pointer += 2 >> pure a)
         >>= \case
           None -> pure ()
+          Flow f -> execFlow f
+          Regs r -> execRegs r
+          Math m -> execMath m
+          Input i -> execInput i
           DispClear -> display .= V.replicate 64 0
-          Goto nnn -> pointer .= nnn
-          Return -> do
-            use (stack . singular _head) >>= assign pointer
-            stack %= drop 1
-          Call nnn -> do
-            ptr <- use pointer
-            stack %= (ptr :)
-            pointer .= nnn
-          SkipIfEq x nn -> do
-            cur <- use $ registers @ x
-            when (cur == nn) $ pointer += 2
-          SkipIfREq x y -> do
-            vx <- use $ registers @ x
-            vy <- use $ registers @ y
-            when (vx == vy) $ pointer += 2
-          SkipIfNotEq x nn -> do
-            cur <- use $ registers @ x
-            when (cur /= nn) $ pointer += 2
-          SkipIfRNotEq x y -> do
-            vx <- use $ registers @ x
-            vy <- use $ registers @ y
-            when (vx /= vy) $ pointer += 2
-          RegSet x nn -> (registers @ x) .= nn
-          CAdd x nn -> (registers @ x) += nn
-          Move x y -> use (registers @ y) >>= assign (registers @ x)
-          BOr x y ->
-            use (registers @ y)
-              >>= (\vx vy -> vx %= (.|.) vy) (registers @ x)
-          BAnd x y ->
-            use (registers @ y)
-              >>= (\vx vy -> vx %= (.&.) vy) (registers @ x)
-          BXor x y ->
-            use (registers @ y)
-              >>= (\vx vy -> vx %= xor vy) (registers @ x)
-          Add x y -> do
-            !vx <- use $ registers @ x
-            !vy <- use $ registers @ y
-            registers @ x += vy
-            if fromIntegral @_ @Int vx + fromIntegral vy > 255
-              then (registers @ 15) .= 1
-              else (registers @ 15) .= 0
-          Sub x y -> do
-            !vx <- use $ registers @ x
-            !vy <- use $ registers @ y
-            registers @ x -= vy
-            if vx >= vy
-              then registers @ 15 .= 1
-              else registers @ 15 .= 0
-          SubFrom x y -> do
-            !vx <- use $ registers @ x
-            !vy <- use $ registers @ y
-            registers @ x .= vy - vx
-            if vy >= vx
-              then registers @ 15 .= 1
-              else registers @ 15 .= 0
-          RShift x -> do
-            registers @ x %= (`shiftR` 1)
-            vx <- use (registers @ x)
-            registers @ 15 .= fromIntegral (vx .&. 1)
-          LShift x -> do
-            registers @ x %= (`shiftL` 1)
-            vx <- use (registers @ x)
-            registers @ 15 .= fromIntegral (vx .&. bit 8)
-          SetI nnn -> iReg .= nnn
-          JmpV0Plus nnn -> do
-            v0 <- fromIntegral <$> use (registers @ 0)
-            pointer .= v0 + nnn
           RandomAnd x nn -> do
             rnd <- liftIO $ randomRIO (0, 255)
             registers @ x .= rnd .&. nn
           GetDelay x -> use dt >>= assign (registers @ x) . fromIntegral
           SetDelay x -> use (registers @ x) >>= assign dt . fromIntegral
           SetSound x -> use (registers @ x) >>= assign st . fromIntegral
-          SkipIfNotPressed x -> do
-            !vx <- use $ registers @ x
-            isUp <- liftIO $ isKeyUp $ key vx
-            when isUp $ pointer += 2
-          SkipIfPressed x -> do
-            !vx <- use $ registers @ x
-            isDown <- liftIO $ isKeyDown $ key vx
-            when isDown $ pointer += 2
-          WaitForKey x -> halted .= Waiting x
-          AddI x -> use (registers @ x) >>= (iReg +=) . fromIntegral
-          StoreBCD x -> do
-            vx <- use $ registers @ x
-
-            i <- use iReg
-            memory @ (i + 2) .= vx `mod` 10
-            memory @ (i + 1) .= vx `div` 10
-            memory @ i .= vx `div` 100
-          DumpRegs x -> do
-            i <- use iReg
-            forM_ [0 .. x] $ \l -> do
-              r <- use $ registers @ l
-              memory @ (i + l) .= r
-          LoadRegs x -> do
-            i <- use iReg
-            forM_ [0 .. x] $ \l -> do
-              r <- use $ memory @ (i + l)
-              registers @ l .= r
           FontSprite x -> do
             vx <- use $ registers @ x
             iReg .= fromIntegral vx * 5
