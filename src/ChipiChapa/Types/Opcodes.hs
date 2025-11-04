@@ -44,9 +44,9 @@ data Math
   | BXor Reg Reg
   | Add Reg Reg
   | Sub Reg Reg
-  | RShift Reg
+  | RShift Reg Reg
   | SubFrom Reg Reg
-  | LShift Reg
+  | LShift Reg Reg
   deriving (Show)
 
 data Regs

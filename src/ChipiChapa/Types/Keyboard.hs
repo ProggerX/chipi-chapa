@@ -1,8 +1,9 @@
 {-# LANGUAGE LambdaCase #-}
+
 module ChipiChapa.Types.Keyboard where
 
-import Raylib.Types
 import Data.Word
+import Raylib.Types
 
 key :: Word8 -> KeyboardKey
 key = \case
@@ -63,4 +64,3 @@ keys =
   , KeyC
   , KeyV
   ]
-

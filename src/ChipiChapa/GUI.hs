@@ -33,7 +33,7 @@ initialGUI :: IO GUI
 initialGUI = do
   wv <- loadWaveFromMemory ".wav" $ map fromIntegral $ BS.unpack beepF
   sn <- loadSoundFromWave wv
-  pure (GUI 512 0 sn)
+  pure $ GUI 512 0 sn
 
 rLoop :: AppM ()
 rLoop = do

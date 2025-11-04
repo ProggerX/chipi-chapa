@@ -27,9 +27,9 @@ math =
     , (BXor <$> (char '8' >> regP) <*> (regP <* char '3'))
     , (Add <$> (char '8' >> regP) <*> (regP <* char '4'))
     , (Sub <$> (char '8' >> regP) <*> (regP <* char '5'))
-    , (RShift <$> do (char '8' >> regP) >> (regP <* char '6'))
+    , (RShift <$> (char '8' >> regP) <*> (regP <* char '6'))
     , (SubFrom <$> (char '8' >> regP) <*> (regP <* char '7'))
-    , (LShift <$> do (char '8' >> regP) >> (regP <* char 'E'))
+    , (LShift <$> (char '8' >> regP) <*> (regP <* char 'E'))
     ]
 regs =
   map ((Regs <$>) . try) $
