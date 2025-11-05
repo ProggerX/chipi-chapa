@@ -26,4 +26,4 @@ Use cabal idk
 - `+/-` - control speed
 
 ## Development
-Try `nix develop`.
+Use nix-direnv or `nix develop`.
